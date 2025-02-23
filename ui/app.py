@@ -54,6 +54,7 @@ sys.stderr = PrintCapture(log_queue, 'stderr')
 import json
 import threading
 import time
+import requests
 from flask import Flask, request, render_template, jsonify
 from flask_sock import Sock
 from transformers import AutoTokenizer
@@ -112,87 +113,48 @@ def update_progress(progress):
 def main():
     return render_template('main.html', response=None)
 
-
-def get_server_state(server):
-    """Determine server state based on various metrics"""
-    try:
-        if not hasattr(server, 'is_active'):
-            return 'UNREACHABLE'
-        if not server.is_active:
-            return 'OFFLINE'
-        if hasattr(server, 'is_joining') and server.is_joining:
-            return 'JOINING'
-        return 'ONLINE'
-    except:
-        return 'UNREACHABLE'
-
 def get_petals_health():
     """Get health data from Petals network"""
-    global model
     try:
-        if model is None:
-            model_name = "bigscience/bloom-560m"
-            model = AutoDistributedModelForCausalLM.from_pretrained(model_name)
-        
-        # Group servers by model
-        model_groups = {}
-        
-        # Get active servers from the model's routing info
-        if hasattr(model, '_remote_forward_backward'):
-            servers = model._remote_forward_backward.active_servers
-        else:
-            servers = []
-        
-        # Process each server
-        for i, server in enumerate(servers):
-            try:
-                # Get server metrics from the server's handler
-                handler = server.handler if hasattr(server, 'handler') else None
-                
-                # Extract metrics with safe fallbacks
-                throughput = getattr(handler, 'throughput', 0) if handler else 0
-                cache_info = getattr(handler, 'cache_info', None) if handler else None
-                cache_tokens = cache_info.available if cache_info else 0
-                max_cache = cache_info.total if cache_info else 100
-                
-                # Get server details
-                server_info = {
-                    'id': getattr(server, 'peer_id', f"Server {i}")[:8],
-                    'full_id': getattr(server, 'peer_id', None),
-                    'state': get_server_state(server),
-                    'version': getattr(server, 'version', 'Unknown'),
-                    'throughput': throughput,
-                    'precision': getattr(handler, 'precision', 'Unknown') if handler else 'Unknown',
-                    'cache_tokens_left': cache_tokens,
-                    'max_cache_tokens': max_cache
-                }
-                
-                # Group by model
-                model_type = getattr(server, 'model_name', 'Unknown Model')
-                if model_type not in model_groups:
-                    model_groups[model_type] = []
-                model_groups[model_type].append(server_info)
-                
-            except Exception as e:
-                print(f"Error getting server {i} data: {str(e)}")
-                server_info = {
-                    'id': f"Server {i}",
+        # Fetch network state from health monitor API
+        response = requests.get('https://health.petals.dev/api/v1/state')
+        if response.status_code != 200:
+            return {
+                'Error': [{
+                    'id': 'API Error',
                     'state': 'ERROR',
                     'version': 'Unknown',
                     'throughput': 0,
                     'precision': 'Unknown',
                     'cache_tokens_left': 0,
                     'max_cache_tokens': 100
+                }]
+            }
+
+        data = response.json()
+        model_groups = {}
+
+        # Process each model report
+        for model_report in data.get('model_reports', []):
+            model_name = model_report.get('name', 'Unknown Model')
+            servers = []
+
+            # Process each server in the model's server rows
+            for server_row in model_report.get('server_rows', []):
+                server_info = {
+                    'id': server_row.get('id', 'Unknown'),
+                    'state': server_row.get('state', 'UNKNOWN'),
+                    'version': server_row.get('version', 'Unknown'),
+                    'throughput': server_row.get('throughput', 0),
+                    'precision': server_row.get('precision', 'Unknown'),
+                    'cache_tokens_left': server_row.get('cache_tokens', 0),
+                    'max_cache_tokens': server_row.get('max_cache', 100)
                 }
-                
-                if 'Error' not in model_groups:
-                    model_groups['Error'] = []
-                model_groups['Error'].append(server_info)
-        
-        # If no servers were found, return a message in the Unknown Model group
-        if not model_groups:
-            return {
-                'Unknown Model': [{
+                servers.append(server_info)
+
+            # If no servers, add a placeholder
+            if not servers:
+                servers = [{
                     'id': 'No Servers',
                     'state': 'OFFLINE',
                     'version': 'Unknown',
@@ -201,12 +163,13 @@ def get_petals_health():
                     'cache_tokens_left': 0,
                     'max_cache_tokens': 100
                 }]
-            }
-        
+
+            model_groups[model_name] = servers
+
         return model_groups
+
     except Exception as e:
-        print(f"Error getting health data: {str(e)}")
-        # Return error group if we can't get any data
+        logger.error(f"Error getting health data: {str(e)}")
         return {
             'Error': [{
                 'id': 'Error',
