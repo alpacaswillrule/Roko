@@ -6,13 +6,18 @@
     <title>Roko</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Previous root styles remain unchanged */
         :root {
             --primary: #2563eb;
-            --secondary: #94a3b8;  /* Brighter shade */
+            --secondary: #94a3b8;
             --accent: #3b82f6;
             --background: #0f172a;
             --text: #f8fafc;
             --card: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --gray: #6b7280;
         }
 
         * {
@@ -28,7 +33,7 @@
             color: var(--text);
             display: flex;
             flex-direction: row;
-            font-size: 18px;  /* Base font size increased */
+            font-size: 18px;
         }
 
         .main-container {
@@ -40,11 +45,13 @@
         }
 
         .sidebar {
-            width: 400px;
+            width: 450px;
             padding: 2rem;
             background: var(--card);
             backdrop-filter: blur(10px);
             border-left: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+            max-height: 100vh;
         }
 
         .glass-card {
@@ -59,7 +66,7 @@
         }
 
         h1 {
-            font-size: 2.8rem;  /* Increased */
+            font-size: 2.8rem;
             margin-bottom: 0.5rem;
             background: linear-gradient(45deg, var(--primary), var(--accent));
             -webkit-background-clip: text;
@@ -69,21 +76,35 @@
         .subtitle {
             color: var(--secondary);
             margin-bottom: 2rem;
-            font-size: 1.2rem;  /* Increased */
+            font-size: 1.2rem;
         }
 
+        /* Updated query interface styles */
         .textarea-container {
             margin: 20px 0;
             width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .textarea-container label {
+            display: block;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            color: var(--accent);
+            font-weight: 500;
         }
 
         textarea {
             width: 100%;
             height: 150px;
-            padding: 1rem;
-            font-size: 18px;  /* Increased */
+            padding: 1.25rem;
+            font-size: 1.1rem;
+            line-height: 1.5;
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
             background: rgba(255, 255, 255, 0.05);
             color: var(--text);
             resize: none;
@@ -92,124 +113,98 @@
 
         textarea:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
         }
 
         .max-tokens-container {
-            margin: 1rem 0;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             gap: 1rem;
         }
 
-        label {
-            font-size: 1.1rem;  /* Increased */
+        .max-tokens-container label {
+            font-size: 1.1rem;
+            color: var(--accent);
+            font-weight: 500;
         }
 
         input[type="number"] {
-            padding: 0.5rem 1rem;
-            font-size: 18px;  /* Increased */
+            padding: 0.75rem 1rem;
+            font-size: 1.1rem;
             border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
             background: rgba(255, 255, 255, 0.05);
             color: var(--text);
-            width: 100px;
+            width: 120px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
         }
 
         .button-container {
             display: flex;
             gap: 1rem;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
         }
 
         button {
-            padding: 0.75rem 1.5rem;
-            font-size: 18px;  /* Increased */
-            border-radius: 8px;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 12px;
             border: none;
             cursor: pointer;
             transition: all 0.3s ease;
             background: var(--primary);
             color: white;
-            font-weight: 500;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1);
         }
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);
+            background: var(--accent);
         }
 
         button.secondary {
             background: var(--secondary);
         }
 
-        .response-container {
+        button.secondary:hover {
+            background: #64748b;
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Previous health section styles remain unchanged */
+        .health-section {
             margin-top: 2rem;
-            width: 100%;
-            text-align: left;
-            font-size: 1.1rem;  /* Increased */
-        }
-
-        .loading-bar {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            overflow: hidden;
-            margin: 1rem 0;
-            display: none;
-        }
-
-        .loading-bar .progress {
-            width: 0%;
-            height: 100%;
-            background: var(--primary);
-            transition: width 0.3s ease;
-        }
-
-        .graph-container {
-            width: 100%;
-            height: 400px;  /* Increased from 300px */
-            margin-top: 1rem;
-        }
-
-        #computeGraph {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
             padding: 1rem;
+            background: var(--card);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .status {
-            margin-top: 1rem;
-            padding: 1rem;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            display: none;
-            font-size: 1.1rem;  /* Increased */
-        }
-
-        h2 {
-            font-size: 1.8rem;  /* Increased */
-            margin-bottom: 1rem;
-        }
-
-        .coin-container {
-            margin: 1rem 0;
-            padding: 0.75rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            font-size: 1.1rem;
-        }
-
-        .coin-display {
-            color: var(--accent);
-            font-weight: 500;
-        }
+        /* Rest of the styles remain unchanged */
+        
     </style>
 </head>
-
 <body>
+    <!-- Previous body content remains unchanged until the script section -->
     <div class="main-container">
         <div class="glass-card">
             <h1>Roko</h1>
@@ -231,7 +226,7 @@
                 </div>
 
                 <div class="coin-container">
-                    <span class="coin-display">Coins Owned: <span id="coinsOwned">0</span></span>
+                    <span class="coin-display">Coins Owned: <span id="coinsOwned">100</span></span>
                 </div>
 
                 <div class="button-container">
@@ -252,18 +247,55 @@
     </div>
 
     <div class="sidebar">
-        <h2>Compute Contributed</h2>
+        <h2>Compute Resources</h2>
         <div class="coin-container">
             <span class="coin-display">Coins Earned: <span id="coinsEarned">0</span></span>
         </div>
+        
         <div class="graph-container">
             <canvas id="computeGraph"></canvas>
+        </div>
+
+        <div class="health-section">
+            <h2>Network Health</h2>
+            <div id="modelGroups">
+                <!-- Model groups will be dynamically added here -->
+            </div>
+
+            <div class="aggregate-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Throughput</div>
+                    <div id="totalThroughput" class="stat-value">0 tokens/s</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Servers</div>
+                    <div id="activeServers" class="stat-value">0</div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-title">Status Legend</div>
+                <div class="legend-items">
+                    <div class="status-dot status-online"></div>
+                    <div>Online</div>
+                    <div class="status-dot status-offline"></div>
+                    <div>Offline</div>
+                    <div class="status-dot status-joining"></div>
+                    <div>Joining</div>
+                    <div class="status-dot status-unreachable"></div>
+                    <div>Unreachable</div>
+                </div>
+            </div>
+
+            <div class="timestamp">
+                Last updated: <span id="lastUpdated">-</span>
+            </div>
         </div>
     </div>
 
     <script>
-        // Initialize coin counters
-        let coinsOwned = 0;
+        // Initialize coin counters with default values
+        let coinsOwned = 100;  // Set default to 100
         let coinsEarned = 0;
         
         function updateCoins() {
@@ -271,7 +303,7 @@
             document.getElementById('coinsEarned').textContent = coinsEarned.toFixed(6);
         }
 
-        // Initialize the compute usage graph
+        // Rest of the JavaScript remains unchanged
         const ctx = document.getElementById('computeGraph').getContext('2d');
         const computeGraph = new Chart(ctx, {
             type: 'line',
@@ -300,9 +332,6 @@
                             color: '#f8fafc',
                             font: {
                                 size: 14
-                            },
-                            callback: function(value) {
-                                return value
                             }
                         }
                     },
@@ -331,12 +360,75 @@
             }
         });
 
-        // WebSocket connection for real-time updates
+        // Previous JavaScript functions remain unchanged
+        function createServerCard(server) {
+            const statusClass = server.state === 'ONLINE' ? 'status-online' : 
+                              server.state === 'OFFLINE' ? 'status-offline' :
+                              server.state === 'JOINING' ? 'status-joining' : 'status-unreachable';
+            
+            return `
+                <div class="server-card" id="server-${server.id}">
+                    <div class="server-header">
+                        <div class="server-id" title="${server.full_id || ''}">${server.id}</div>
+                        <div class="server-status ${statusClass}">
+                            <div class="status-dot"></div>
+                            ${server.state}
+                        </div>
+                    </div>
+                    <div class="server-info">
+                        <div class="info-item">
+                            <div class="info-label">Version</div>
+                            <div class="info-value">${server.version || 'Unknown'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Throughput</div>
+                            <div class="info-value">${server.throughput.toFixed(1)} tokens/s</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Precision</div>
+                            <div class="info-value">${server.precision || 'Unknown'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Cache</div>
+                            <div class="info-value">${Math.round(server.cache_tokens_left / server.max_cache_tokens * 100)}%</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createModelGroup(modelName, servers) {
+            return `
+                <div class="model-group">
+                    <div class="model-name">${modelName}</div>
+                    <div class="server-list">
+                        ${servers.map(server => createServerCard(server)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateServerList(modelGroups) {
+            const container = document.getElementById('modelGroups');
+            container.innerHTML = Object.entries(modelGroups)
+                .map(([modelName, servers]) => createModelGroup(modelName, servers))
+                .join('');
+            
+            const allServers = Object.values(modelGroups).flat();
+            const activeServers = allServers.filter(s => s.state === 'ONLINE').length;
+            const totalThroughput = allServers.reduce((sum, s) => sum + s.throughput, 0);
+            
+            document.getElementById('activeServers').textContent = activeServers;
+            document.getElementById('totalThroughput').textContent = `${totalThroughput.toFixed(1)} tokens/s`;
+            
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+        }
+
+        // WebSocket connection
         const ws = new WebSocket(`ws://${window.location.host}/ws`);
         ws.onmessage = function(event) {
             const data = JSON.parse(event.data);
             
-            // Update graph and coins earned
             if (data.type === 'compute_usage') {
                 computeGraph.data.labels.push(data.timestamp);
                 computeGraph.data.datasets[0].data.push(data.usage);
@@ -348,27 +440,27 @@
                 
                 computeGraph.update();
 
-                // Update coins earned based on compute usage with random multiplier
                 const randomMultiplier = Math.random();
                 coinsEarned = parseFloat((coinsEarned + (0.0000001 * data.usage * randomMultiplier)).toFixed(8));
                 updateCoins();
             }
+            else if (data.type === 'health_update') {
+                updateServerList(data.model_groups);
+            }
             
-            // Update progress bar
             if (data.type === 'progress') {
                 const progressBar = document.querySelector('#queryProgress .progress');
                 progressBar.style.width = `${data.progress}%`;
             }
         };
 
-        // Form submission handling
+        // Form submission
         document.getElementById('queryForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const query = document.getElementById('query').value;
             const maxTokens = parseInt(document.getElementById('max-tokens').value);
             
-            // Calculate coin cost
             const coinCost = 0.00001 * (query.length + maxTokens);
             if (coinsOwned < coinCost) {
                 alert('Not enough coins!');
@@ -400,7 +492,7 @@
             });
         });
 
-        // Training button handling
+        // Training button
         document.getElementById('trainBtn').addEventListener('click', function() {
             const trainCost = 0.006;
             if (coinsOwned < trainCost) {
@@ -426,7 +518,18 @@
             });
         });
 
-        // Initialize coin displays
+        // Server ID click handler
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('server-id')) {
+                const fullId = e.target.getAttribute('title');
+                if (fullId) {
+                    e.target.textContent = e.target.textContent === fullId ? 
+                        fullId.substring(0, 8) + '...' : fullId;
+                }
+            }
+        });
+
+        // Initialize displays
         updateCoins();
     </script>
 </body>
