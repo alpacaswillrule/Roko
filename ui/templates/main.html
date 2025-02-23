@@ -6,7 +6,6 @@
     <title>Roko</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Previous root styles remain unchanged */
         :root {
             --primary: #2563eb;
             --secondary: #94a3b8;
@@ -18,6 +17,8 @@
             --error: #ef4444;
             --warning: #f59e0b;
             --gray: #6b7280;
+            --debug: #94a3b8;
+            --info: #3b82f6;
         }
 
         * {
@@ -79,7 +80,6 @@
             font-size: 1.2rem;
         }
 
-        /* Updated query interface styles */
         .textarea-container {
             margin: 20px 0;
             width: 100%;
@@ -190,7 +190,6 @@
             transform: none;
         }
 
-        /* Previous health section styles remain unchanged */
         .health-section {
             margin-top: 2rem;
             padding: 1rem;
@@ -199,12 +198,287 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Rest of the styles remain unchanged */
-        
+        .model-group {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .model-name {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .server-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .server-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .server-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .server-id {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--secondary);
+            cursor: pointer;
+        }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-online {
+            background: var(--success);
+            color: white;
+        }
+
+        .status-offline {
+            background: var(--error);
+            color: white;
+        }
+
+        .status-joining {
+            background: var(--warning);
+            color: white;
+        }
+
+        .status-unreachable {
+            background: var(--gray);
+            color: white;
+        }
+
+        .server-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            color: var(--secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .aggregate-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-card {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: var(--secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .graph-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 1rem;
+        }
+
+        #computeGraph {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .coin-container {
+            margin: 1rem 0;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 1.1rem;
+        }
+
+        .coin-display {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* Log section styles */
+        .log-section {
+            margin-top: 2rem;
+            width: 100%;
+            max-width: 800px;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .log-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .log-control-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .log-control-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .log-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .log-timestamp {
+            color: var(--secondary);
+            font-size: 0.8rem;
+            min-width: 80px;
+        }
+
+        .log-debug {
+            color: var(--debug);
+        }
+
+        .log-info {
+            color: var(--info);
+        }
+
+        .log-error {
+            color: var(--error);
+        }
+
+        .log-warning {
+            color: var(--warning);
+        }
+
+        .log-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .log-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .log-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .log-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .loading-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .loading-bar .progress {
+            width: 0%;
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            display: none;
+            font-size: 1.1rem;
+        }
+
+        .response-container {
+            margin-top: 2rem;
+            width: 100%;
+            text-align: left;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
-    <!-- Previous body content remains unchanged until the script section -->
     <div class="main-container">
         <div class="glass-card">
             <h1>Roko</h1>
@@ -242,6 +516,20 @@
                 <h2>Response:</h2>
                 <p>{{ response }}</p>
                 {% endif %}
+            </div>
+        </div>
+
+        <!-- Log Section -->
+        <div class="log-section glass-card">
+            <div class="log-header">
+                <h2>System Logs</h2>
+                <div class="log-controls">
+                    <button id="clearLogs" class="log-control-btn">Clear</button>
+                    <button id="toggleLogs" class="log-control-btn">Show/Hide</button>
+                </div>
+            </div>
+            <div id="logContainer" class="log-container">
+                <!-- Logs will be added here dynamically -->
             </div>
         </div>
     </div>
@@ -295,7 +583,7 @@
 
     <script>
         // Initialize coin counters with default values
-        let coinsOwned = 100;  // Set default to 100
+        let coinsOwned = 100;
         let coinsEarned = 0;
         
         function updateCoins() {
@@ -303,7 +591,7 @@
             document.getElementById('coinsEarned').textContent = coinsEarned.toFixed(6);
         }
 
-        // Rest of the JavaScript remains unchanged
+        // Initialize the compute usage graph
         const ctx = document.getElementById('computeGraph').getContext('2d');
         const computeGraph = new Chart(ctx, {
             type: 'line',
@@ -360,7 +648,38 @@
             }
         });
 
-        // Previous JavaScript functions remain unchanged
+        // Initialize log container
+        const logContainer = document.getElementById('logContainer');
+        let isLogVisible = true;
+
+        // Function to add a log entry
+        function addLogEntry(log) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${log.type}`;
+            entry.innerHTML = `
+                <span class="log-timestamp">${log.timestamp}</span>
+                <span class="log-message">${log.message}</span>
+            `;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+
+            // Keep only the last 1000 log entries to prevent memory issues
+            while (logContainer.children.length > 1000) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+        }
+
+        // Log controls
+        document.getElementById('clearLogs').addEventListener('click', function() {
+            logContainer.innerHTML = '';
+        });
+
+        document.getElementById('toggleLogs').addEventListener('click', function() {
+            isLogVisible = !isLogVisible;
+            logContainer.style.display = isLogVisible ? 'block' : 'none';
+        });
+
+        // Function to create a server card
         function createServerCard(server) {
             const statusClass = server.state === 'ONLINE' ? 'status-online' : 
                               server.state === 'OFFLINE' ? 'status-offline' :
@@ -397,6 +716,7 @@
             `;
         }
 
+        // Function to create a model group
         function createModelGroup(modelName, servers) {
             return `
                 <div class="model-group">
@@ -408,6 +728,7 @@
             `;
         }
 
+        // Function to update server list
         function updateServerList(modelGroups) {
             const container = document.getElementById('modelGroups');
             container.innerHTML = Object.entries(modelGroups)
@@ -424,7 +745,7 @@
             document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
         }
 
-        // WebSocket connection
+        // WebSocket connection for real-time updates
         const ws = new WebSocket(`ws://${window.location.host}/ws`);
         ws.onmessage = function(event) {
             const data = JSON.parse(event.data);
@@ -447,6 +768,9 @@
             else if (data.type === 'health_update') {
                 updateServerList(data.model_groups);
             }
+            else if (data.type === 'log_update') {
+                addLogEntry(data.log);
+            }
             
             if (data.type === 'progress') {
                 const progressBar = document.querySelector('#queryProgress .progress');
@@ -454,7 +778,7 @@
             }
         };
 
-        // Form submission
+        // Form submission handling
         document.getElementById('queryForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -492,7 +816,7 @@
             });
         });
 
-        // Training button
+        // Training button handling
         document.getElementById('trainBtn').addEventListener('click', function() {
             const trainCost = 0.006;
             if (coinsOwned < trainCost) {

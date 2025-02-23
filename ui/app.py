@@ -1,12 +1,97 @@
-from flask import Flask, request, render_template, jsonify
-from flask_sock import Sock
+import sys
+import queue
+import logging
+from io import StringIO
+
+# Set up logging and stdout capture first
+log_queue = queue.Queue()
+
+class PrintCapture:
+    def __init__(self, queue, stream_name='stdout'):
+        self.queue = queue
+        self.stream_name = stream_name
+        self.original_stream = sys.stdout if stream_name == 'stdout' else sys.stderr
+
+    def write(self, text):
+        if text.strip():  # Only process non-empty lines
+            # Clean up the message
+            msg = text.strip()
+            # Extract timestamp if present in common formats
+            timestamp = time.strftime('%H:%M:%S')
+            if '[DEBUG]' in msg or '[INFO]' in msg or '[ERROR]' in msg or '[WARNING]' in msg:
+                msg_type = 'debug' if '[DEBUG]' in msg else 'info' if '[INFO]' in msg else 'error' if '[ERROR]' in msg else 'warning'
+            else:
+                msg_type = 'info'
+            
+            self.queue.put({
+                'type': msg_type,
+                'message': msg,
+                'timestamp': timestamp
+            })
+        self.original_stream.write(text)
+
+    def flush(self):
+        self.original_stream.flush()
+
+    def isatty(self):
+        # Delegate isatty to the original stream if it has the method
+        return hasattr(self.original_stream, 'isatty') and self.original_stream.isatty()
+
+    def fileno(self):
+        # Delegate fileno to the original stream
+        return self.original_stream.fileno()
+
+    # Add other file-like object methods that might be needed
+    def readable(self): return True
+    def writable(self): return True
+    def seekable(self): return False
+
+# Replace both stdout and stderr before any other imports
+sys.stdout = PrintCapture(log_queue, 'stdout')
+sys.stderr = PrintCapture(log_queue, 'stderr')
+
+# Now import everything else
 import json
 import threading
 import time
+from flask import Flask, request, render_template, jsonify
+from flask_sock import Sock
 from transformers import AutoTokenizer
 from petals import AutoDistributedModelForCausalLM
 from .gpu_monitor import compute_resource_usage
 from .train_distributed import main as train_model
+
+
+class QueueHandler(logging.Handler):
+    def __init__(self, queue):
+        super().__init__()
+        self.queue = queue
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            self.queue.put({
+                'type': record.levelname.lower(),
+                'message': msg,
+                'timestamp': time.strftime('%H:%M:%S')
+            })
+        except Exception:
+            self.handleError(record)
+
+# Configure logging and stdout capture
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(levelname)s] %(message)s',
+    handlers=[
+        QueueHandler(log_queue),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+# Replace stdout with our print capture
+sys.stdout = PrintCapture(log_queue)
 
 # Global model instance for health monitoring
 model = None
@@ -26,6 +111,7 @@ def update_progress(progress):
 @app.route("/")
 def main():
     return render_template('main.html', response=None)
+
 
 def get_server_state(server):
     """Determine server state based on various metrics"""
@@ -162,9 +248,17 @@ def websocket(ws):
                     'progress': current_progress
                 }))
             
+            # Send any new log messages
+            while not log_queue.empty():
+                log_entry = log_queue.get_nowait()
+                ws.send(json.dumps({
+                    'type': 'log_update',
+                    'log': log_entry
+                }))
+            
             time.sleep(1)  # Update every second
     except Exception as e:
-        print(f"WebSocket error: {str(e)}")
+        logger.error(f"WebSocket error: {str(e)}")
 
 @app.route('/get_response', methods=['GET', 'POST'])
 def get_response():
@@ -192,26 +286,37 @@ def train():
 def getResponse(query, max_tokens):
     try:
         update_progress(10)  # Starting
+        logger.info("Starting response generation")
         
         # Initialize the model and tokenizer
         model_name = "bigscience/bloom-560m"
+        logger.debug(f"Loading tokenizer for {model_name}")
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         update_progress(30)  # Tokenizer loaded
+        logger.info("Tokenizer loaded successfully")
         
+        logger.debug(f"Loading model {model_name}")
         model = AutoDistributedModelForCausalLM.from_pretrained(model_name)
         update_progress(50)  # Model loaded
+        logger.info("Model loaded successfully")
         
         # Prepare input text
+        logger.debug("Preparing input text")
         inputs = tokenizer(query, return_tensors="pt", max_length=1024, padding=True)["input_ids"]
         update_progress(70)  # Input prepared
+        logger.info("Input prepared successfully")
         
         # Generate response
+        logger.debug("Generating response")
         outputs = model.generate(inputs, max_new_tokens=max_tokens)
         update_progress(90)  # Generation complete
+        logger.info("Response generated successfully")
         
         # Decode response
+        logger.debug("Decoding response")
         decoded_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
         update_progress(100)  # Finished
+        logger.info("Response decoded successfully")
         
         # Reset progress after completion
         update_progress(0)
@@ -219,6 +324,7 @@ def getResponse(query, max_tokens):
         return decoded_text
     except Exception as e:
         update_progress(0)  # Reset progress on error
+        logger.error(f"Error generating response: {str(e)}")
         raise e
 
 if __name__ == '__main__':
