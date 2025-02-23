@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def main():
-    return render_template('index.html')
+    return render_template('main.html', response=None)
 
 @app.route('/get_response', methods=['GET', 'POST'])
 def get_response():
@@ -17,8 +17,10 @@ def get_response():
         max_tokens = request.form.get('max_tokens', type=int)
 
         response_string = getResponse(query, max_tokens)
+
+        response_string = "test"
    
-        return render_template('index.html', response=response_string)
+        return render_template('main.html', response=response_string)
     
 
 def getResponse(query, max_tokens):

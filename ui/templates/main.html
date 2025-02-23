@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roko</title>
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: white;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 2rem;
+        }
+
+        .container {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .textarea-container {
+            margin: 20px 0;
+        }
+
+        textarea {
+            width: 80%;
+            height: 150px;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            resize: none;
+        }
+
+        .max-tokens-container {
+            margin: 10px 0;
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .button {
+            margin: 2px;
+            padding: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Roko</h1>
+        <p class="subtitle">Efficient LLM Training and Inference Using Peer GPUs for HBRA</p>
+
+        <form action="/get_response" method="POST">
+            <div class="textarea-container">
+                <label for="query">Enter your query:</label>
+                <textarea id="query" name="query" placeholder="Type your query here..."></textarea>
+            </div>
+
+            <div class="max-tokens-container">
+                <label for="max-tokens">Max Tokens:</label>
+                <input type="number" id="max-tokens" name="max_tokens" value="5">
+            </div>
+
+            <button type="submit">Submit</button>
+        </form>
+
+        {% if response %}
+        <h2>Response:</h2>
+        <p>{{ response }}</p>
+        {% endif %}
+    </div>
+</body>
+
+</html>
