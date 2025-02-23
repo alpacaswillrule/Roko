@@ -193,6 +193,19 @@
             font-size: 1.8rem;  /* Increased */
             margin-bottom: 1rem;
         }
+
+        .coin-container {
+            margin: 1rem 0;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 1.1rem;
+        }
+
+        .coin-display {
+            color: var(--accent);
+            font-weight: 500;
+        }
     </style>
 </head>
 
@@ -217,6 +230,10 @@
                     <div class="progress"></div>
                 </div>
 
+                <div class="coin-container">
+                    <span class="coin-display">Coins Owned: <span id="coinsOwned">0</span></span>
+                </div>
+
                 <div class="button-container">
                     <button type="submit" id="submitBtn">Generate Response</button>
                     <button type="button" id="trainBtn" class="secondary">Train Model</button>
@@ -236,12 +253,24 @@
 
     <div class="sidebar">
         <h2>Compute Contributed</h2>
+        <div class="coin-container">
+            <span class="coin-display">Coins Earned: <span id="coinsEarned">0</span></span>
+        </div>
         <div class="graph-container">
             <canvas id="computeGraph"></canvas>
         </div>
     </div>
 
     <script>
+        // Initialize coin counters
+        let coinsOwned = 0;
+        let coinsEarned = 0;
+        
+        function updateCoins() {
+            document.getElementById('coinsOwned').textContent = coinsOwned.toFixed(6);
+            document.getElementById('coinsEarned').textContent = coinsEarned.toFixed(6);
+        }
+
         // Initialize the compute usage graph
         const ctx = document.getElementById('computeGraph').getContext('2d');
         const computeGraph = new Chart(ctx, {
@@ -249,7 +278,7 @@
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'Compute Contributed',  /* Removed % */
+                    label: 'Compute Contributed',
                     data: [],
                     borderColor: '#2563eb',
                     backgroundColor: 'rgba(37, 99, 235, 0.1)',
@@ -270,10 +299,10 @@
                         ticks: {
                             color: '#f8fafc',
                             font: {
-                                size: 14  /* Increased */
+                                size: 14
                             },
                             callback: function(value) {
-                                return value  /* Removed % */
+                                return value
                             }
                         }
                     },
@@ -284,7 +313,7 @@
                         ticks: {
                             color: '#f8fafc',
                             font: {
-                                size: 14  /* Increased */
+                                size: 14
                             }
                         }
                     }
@@ -294,7 +323,7 @@
                         labels: {
                             color: '#f8fafc',
                             font: {
-                                size: 14  /* Increased */
+                                size: 14
                             }
                         }
                     }
@@ -307,7 +336,7 @@
         ws.onmessage = function(event) {
             const data = JSON.parse(event.data);
             
-            // Update graph
+            // Update graph and coins earned
             if (data.type === 'compute_usage') {
                 computeGraph.data.labels.push(data.timestamp);
                 computeGraph.data.datasets[0].data.push(data.usage);
@@ -318,6 +347,11 @@
                 }
                 
                 computeGraph.update();
+
+                // Update coins earned based on compute usage with random multiplier
+                const randomMultiplier = Math.random();
+                coinsEarned = parseFloat((coinsEarned + (0.0000001 * data.usage * randomMultiplier)).toFixed(8));
+                updateCoins();
             }
             
             // Update progress bar
@@ -330,6 +364,19 @@
         // Form submission handling
         document.getElementById('queryForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            const query = document.getElementById('query').value;
+            const maxTokens = parseInt(document.getElementById('max-tokens').value);
+            
+            // Calculate coin cost
+            const coinCost = 0.00001 * (query.length + maxTokens);
+            if (coinsOwned < coinCost) {
+                alert('Not enough coins!');
+                return;
+            }
+            
+            coinsOwned -= coinCost;
+            updateCoins();
             
             const progressBar = document.getElementById('queryProgress');
             const statusMessage = document.getElementById('statusMessage');
@@ -355,6 +402,15 @@
 
         // Training button handling
         document.getElementById('trainBtn').addEventListener('click', function() {
+            const trainCost = 0.006;
+            if (coinsOwned < trainCost) {
+                alert('Not enough coins!');
+                return;
+            }
+            
+            coinsOwned -= trainCost;
+            updateCoins();
+            
             const statusMessage = document.getElementById('statusMessage');
             statusMessage.style.display = 'block';
             statusMessage.textContent = 'Training model...';
@@ -369,6 +425,9 @@
                 this.disabled = false;
             });
         });
+
+        // Initialize coin displays
+        updateCoins();
     </script>
 </body>
 </html>
