@@ -134,3 +134,6 @@ dmypy.json
 .idea/
 
 compute_usuage_log.csv
+
+
+node_modules

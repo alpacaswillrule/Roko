@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hedera Token Transfer</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+    <h2>Hedera HBAR Transfer</h2>
+
+    <label for="balance">Balance:</label>
+    <input type="text" id="balance" value="10" disabled>
+
+    <br><br>
+    <button onclick="transferHbar()">Transfer 1 HBAR</button>
+
+    <p id="transaction-link"></p>
+
+    <script>
+        async function transferHbar() {
+            try {
+                const response = await axios.get('http://localhost:3000/transferHbar');
+
+                // Update balance input field
+                document.getElementById('balance').value = response.data.balance;
+
+                // Update transaction link
+                document.getElementById('transaction-link').innerHTML =
+                    `Transaction: <a href="${response.data.transactionUrl}" target="_blank">View on HashScan</a>`;
+
+                alert('Transaction Successful!');
+            } catch (error) {
+                console.error('Error during transfer:', error);
+                alert('Transfer failed!');
+            }
+        }
+    </script>
+</body>
+
+</html>

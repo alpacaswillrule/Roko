@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -478,6 +479,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="main-container">
         <div class="glass-card">
@@ -500,13 +502,16 @@
                 </div>
 
                 <div class="coin-container">
-                    <span class="coin-display">Coins Owned: <span id="coinsOwned">100</span></span>
+                    <span class="coin-display">Wallet balance <span id="coinsOwned">Loading...</span></span>
                 </div>
 
                 <div class="button-container">
                     <button type="submit" id="submitBtn">Generate Response</button>
                     <button type="button" id="trainBtn" class="secondary">Train Model</button>
                 </div>
+
+                <p id="transaction-link"></p>
+
             </form>
 
             <div class="status" id="statusMessage"></div>
@@ -539,7 +544,7 @@
         <div class="coin-container">
             <span class="coin-display">Coins Earned: <span id="coinsEarned">0</span></span>
         </div>
-        
+
         <div class="graph-container">
             <canvas id="computeGraph"></canvas>
         </div>
@@ -585,11 +590,64 @@
         // Initialize coin counters with default values
         let coinsOwned = 100;
         let coinsEarned = 0;
-        
+
         function updateCoins() {
-            document.getElementById('coinsOwned').textContent = coinsOwned.toFixed(6);
-            document.getElementById('coinsEarned').textContent = coinsEarned.toFixed(6);
+            fetch('http://localhost:3000/getUserBalance')
+                .then(response => response.json()) // Parse the JSON response
+                .then(data => {
+                    // Update the coins owned with the fetched balance
+                    document.getElementById('coinsOwned').textContent = data.balance;
+                    coinsOwned = data.balance
+                })
+                .catch(error => {
+                    // In case of an error, show a fallback message
+                    document.getElementById('coinsOwned').textContent = 'Error loading balance';
+                    console.error('Error fetching balance:', error);
+                });
+
+
+
+            fetch('http://localhost:3000/getMinerBalance')
+                .then(response => response.json()) // Parse the JSON response
+                .then(data => {
+                    // Update the coins owned with the fetched balance
+                    document.getElementById('coinsEarned').textContent = data.balance;
+                    coinsEarned = data.balance
+                })
+                .catch(error => {
+                    // In case of an error, show a fallback message
+                    document.getElementById('coinsOwned').textContent = 'Error loading balance';
+                    console.error('Error fetching balance:', error);
+                });
         }
+
+        fetch('http://localhost:3000/getUserBalance')
+            .then(response => response.json()) // Parse the JSON response
+            .then(data => {
+                // Update the coins owned with the fetched balance
+                document.getElementById('coinsOwned').textContent = data.balance;
+                coinsOwned = data.balance
+            })
+            .catch(error => {
+                // In case of an error, show a fallback message
+                document.getElementById('coinsOwned').textContent = 'Error loading balance';
+                console.error('Error fetching balance:', error);
+            });
+
+
+
+        fetch('http://localhost:3000/getMinerBalance')
+            .then(response => response.json()) // Parse the JSON response
+            .then(data => {
+                // Update the coins owned with the fetched balance
+                document.getElementById('coinsEarned').textContent = data.balance;
+                coinsEarned = data.balance
+            })
+            .catch(error => {
+                // In case of an error, show a fallback message
+                document.getElementById('coinsOwned').textContent = 'Error loading balance';
+                console.error('Error fetching balance:', error);
+            });
 
         // Initialize the compute usage graph
         const ctx = document.getElementById('computeGraph').getContext('2d');
@@ -670,21 +728,21 @@
         }
 
         // Log controls
-        document.getElementById('clearLogs').addEventListener('click', function() {
+        document.getElementById('clearLogs').addEventListener('click', function () {
             logContainer.innerHTML = '';
         });
 
-        document.getElementById('toggleLogs').addEventListener('click', function() {
+        document.getElementById('toggleLogs').addEventListener('click', function () {
             isLogVisible = !isLogVisible;
             logContainer.style.display = isLogVisible ? 'block' : 'none';
         });
 
         // Function to create a server card
         function createServerCard(server) {
-            const statusClass = server.state === 'ONLINE' ? 'status-online' : 
-                              server.state === 'OFFLINE' ? 'status-offline' :
-                              server.state === 'JOINING' ? 'status-joining' : 'status-unreachable';
-            
+            const statusClass = server.state === 'ONLINE' ? 'status-online' :
+                server.state === 'OFFLINE' ? 'status-offline' :
+                    server.state === 'JOINING' ? 'status-joining' : 'status-unreachable';
+
             return `
                 <div class="server-card" id="server-${server.id}">
                     <div class="server-header">
@@ -734,31 +792,31 @@
             container.innerHTML = Object.entries(modelGroups)
                 .map(([modelName, servers]) => createModelGroup(modelName, servers))
                 .join('');
-            
+
             const allServers = Object.values(modelGroups).flat();
             const activeServers = allServers.filter(s => s.state === 'ONLINE').length;
             const totalThroughput = allServers.reduce((sum, s) => sum + s.throughput, 0);
-            
+
             document.getElementById('activeServers').textContent = activeServers;
             document.getElementById('totalThroughput').textContent = `${totalThroughput.toFixed(1)} tokens/s`;
-            
+
             document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
         }
 
         // WebSocket connection for real-time updates
         const ws = new WebSocket(`ws://${window.location.host}/ws`);
-        ws.onmessage = function(event) {
+        ws.onmessage = function (event) {
             const data = JSON.parse(event.data);
-            
+
             if (data.type === 'compute_usage') {
                 computeGraph.data.labels.push(data.timestamp);
                 computeGraph.data.datasets[0].data.push(data.usage);
-                
+
                 if (computeGraph.data.labels.length > 30) {
                     computeGraph.data.labels.shift();
                     computeGraph.data.datasets[0].data.shift();
                 }
-                
+
                 computeGraph.update();
 
                 const randomMultiplier = Math.random();
@@ -771,7 +829,7 @@
             else if (data.type === 'log_update') {
                 addLogEntry(data.log);
             }
-            
+
             if (data.type === 'progress') {
                 const progressBar = document.querySelector('#queryProgress .progress');
                 progressBar.style.width = `${data.progress}%`;
@@ -779,75 +837,128 @@
         };
 
         // Form submission handling
-        document.getElementById('queryForm').addEventListener('submit', function(e) {
+        document.getElementById('queryForm').addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const query = document.getElementById('query').value;
             const maxTokens = parseInt(document.getElementById('max-tokens').value);
-            
+
             const coinCost = 0.00001 * (query.length + maxTokens);
+            console.log(coinsOwned, coinCost)
+
             if (coinsOwned < coinCost) {
                 alert('Not enough coins!');
                 return;
             }
-            
-            coinsOwned -= coinCost;
-            updateCoins();
-            
+
+
+            const transferData = { cost: coinCost }
+
+            fetch('http://localhost:3000/transferHbar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(transferData),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+
+                    alert('HBAR Transfer Successful!');
+
+                    updateCoins();
+
+                    document.getElementById('transaction-link').innerHTML =
+                        `Transaction: <a href="${data.transactionUrl}" target="_blank">View on HashScan</a>`;
+                })
+                .catch(error => {
+                    console.error('Error transferring HBAR:', error);
+                    alert('An error occurred while processing the transfer.');
+                });
+
+
+            // updateCoins();
+
             const progressBar = document.getElementById('queryProgress');
             const statusMessage = document.getElementById('statusMessage');
             const submitBtn = document.getElementById('submitBtn');
-            
+
             progressBar.style.display = 'block';
             statusMessage.style.display = 'block';
             statusMessage.textContent = 'Generating response...';
             submitBtn.disabled = true;
-            
+
             fetch('/get_response', {
                 method: 'POST',
                 body: new FormData(this)
             })
-            .then(response => response.text())
-            .then(html => {
-                document.body.innerHTML = html;
-                progressBar.style.display = 'none';
-                statusMessage.style.display = 'none';
-                submitBtn.disabled = false;
-            });
+                .then(response => response.text())
+                .then(html => {
+                    document.body.innerHTML = html;
+                    progressBar.style.display = 'none';
+                    statusMessage.style.display = 'none';
+                    // submitBtn.disabled = false;
+                });
         });
 
         // Training button handling
-        document.getElementById('trainBtn').addEventListener('click', function() {
-            const trainCost = 0.006;
+        document.getElementById('trainBtn').addEventListener('click', function () {
+            const trainCost = 0.001;
+
             if (coinsOwned < trainCost) {
                 alert('Not enough coins!');
                 return;
             }
-            
-            coinsOwned -= trainCost;
-            updateCoins();
-            
+
+            const transferData = { cost: trainCost }
+
+            fetch('http://localhost:3000/transferHbar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(transferData),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+
+                    alert('HBAR Transfer Successful!');
+
+                    updateCoins();
+
+                    document.getElementById('transaction-link').innerHTML =
+                        `Transaction: <a href="${data.transactionUrl}" target="_blank">View on HashScan</a>`;
+                })
+                .catch(error => {
+                    console.error('Error transferring HBAR:', error);
+                    alert('An error occurred while processing the transfer.');
+                });
+
+            // updateCoins();
+
             const statusMessage = document.getElementById('statusMessage');
             statusMessage.style.display = 'block';
             statusMessage.textContent = 'Training model...';
             this.disabled = true;
-            
+
             fetch('/train', {
                 method: 'POST'
             })
-            .then(response => response.json())
-            .then(data => {
-                statusMessage.textContent = data.message;
-                this.disabled = false;
-            });
+                .then(response => response.json())
+                .then(data => {
+                    statusMessage.textContent = data.message;
+                    this.disabled = false;
+                });
         });
 
         // Server ID click handler
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (e.target.classList.contains('server-id')) {
                 const fullId = e.target.getAttribute('title');
                 if (fullId) {
-                    e.target.textContent = e.target.textContent === fullId ? 
+                    e.target.textContent = e.target.textContent === fullId ?
                         fullId.substring(0, 8) + '...' : fullId;
                 }
             }
@@ -857,4 +968,5 @@
         updateCoins();
     </script>
 </body>
+
 </html>
