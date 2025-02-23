@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roko</title>
+    <style>
+        /* Add your custom styles here */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Roko</h1>
+        <p class="subtitle">Efficient LLM Training and Inference Using Peer GPUs for HBRA</p>
+
+        <form action="/get_response" method="POST">
+            <div class="textarea-container">
+                <label for="query">Enter your query:</label>
+                <textarea id="query" name="query" placeholder="Type your query here..."></textarea>
+            </div>
+
+            <div class="max-tokens-container">
+                <label for="max-tokens">Max Tokens:</label>
+                <input type="number" id="max-tokens" name="max_tokens" value="5">
+            </div>
+
+            <button type="submit">Submit</button>
+        </form>
+
+        {% if response %}
+            <h2>Response:</h2>
+            <p>{{ response }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>
