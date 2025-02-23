@@ -7,7 +7,7 @@ def execute(input_text, starter_sent):
     model = AutoDistributedModelForCausalLM.from_pretrained(model_name)
     text = input_text
     inputs = tokenizer(text, return_tensors="pt", max_length=1024, padding=True)["input_ids"]
-    inputs = tokenizer("starter_sent", return_tensors="pt")["input_ids"]
+    inputs = tokenizer(starter_sent, return_tensors="pt")["input_ids"]
     outputs = model.generate(inputs, max_new_tokens=60)
     decoded_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
     print(decoded_text)
