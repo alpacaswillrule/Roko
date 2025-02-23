@@ -9,7 +9,7 @@ from petals import AutoDistributedModelForCausalLM
 
 def main():
     # Training hyperparameters
-    MODEL_NAME = "bigscience/bloom-7b1-petals"  # You can also use other models like meta-llama/Llama-2-7b-hf
+    MODEL_NAME = "bigscience/bloom-560m"  # You can also use other models like meta-llama/Llama-2-7b-hf
     BATCH_SIZE = 4
     LEARNING_RATE = 1e-4
     NUM_EPOCHS = 3
