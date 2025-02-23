@@ -24,7 +24,8 @@ let client;
 
 app.post('/transferHbar', async (req, res) => {
     try {
-        console.log(req.body)
+        console.log("hwre", req.body)
+        console.log()
         const {cost} = req.body;
 
         const operatorIdStr = process.env.OPERATOR_ACCOUNT_ID;
@@ -46,13 +47,20 @@ app.post('/transferHbar', async (req, res) => {
         const currentDateTime = new Date().toLocaleString(); // Get current date and time
         const memoMessage = `Query transaction at Roko at ${currentDateTime}`;
         
-        // 🔹 Perform Transfer
+        // Convert cost to integer tinybars and ensure splits are exact
+        const costInTinybars = parseInt(cost * 100000000); // Convert to tinybars as integer
+        const minerAmount = parseInt(costInTinybars * 0.4); // 40% to miner
+        const otherAmount = costInTinybars - minerAmount; // Remainder to ensure exact total
+
         const transferTx = await new TransferTransaction()
             .setTransactionMemo(memoMessage)
-            .addHbarTransfer(operatorId, new Hbar(-1*cost, HbarUnit.Hbar))
-            .addHbarTransfer(minerId, new Hbar(0.4 * cost, HbarUnit.Hbar))
-            .addHbarTransfer('0.0.5615771', new Hbar(0.6 * cost, HbarUnit.Hbar))
+            .addHbarTransfer(operatorId, new Hbar(-costInTinybars, HbarUnit.Tinybar))
+            .addHbarTransfer(minerId, new Hbar(minerAmount, HbarUnit.Tinybar))
+            .addHbarTransfer('0.0.5615771', new Hbar(otherAmount, HbarUnit.Tinybar))
             .freezeWith(client);
+
+
+        console.log("here")
 
         const transferTxSigned = await transferTx.sign(operatorKey);
         const transferTxSubmitted = await transferTxSigned.execute(client);
@@ -72,15 +80,20 @@ app.post('/transferHbar', async (req, res) => {
 
         client.close();
 
-        res.json({
+        // Send response with transaction details
+        return res.json({
             status: transactionStatus.toString(),
-            // balance: newHbarBalance.toString(),
             transactionUrl: transferTxVerifyUrl,
         });
 
     } catch (ex) {
-        client && client.close();
-        res.status(500).json({ error: ex.message });
+        if (client) {
+            client.close();
+        }
+        // Only send error response if no response has been sent yet
+        if (!res.headersSent) {
+            return res.status(500).json({ error: ex.message });
+        }
     }
 });
 
@@ -109,14 +122,18 @@ app.get('/getUserBalance', async (req, res) => {
 
         client.close();
 
-        res.json({
+        return res.json({
             status: 'success',
             balance: hbarBalance,
         });
 
     } catch (ex) {
-        client && client.close();
-        res.status(500).json({ error: ex.message });
+        if (client) {
+            client.close();
+        }
+        if (!res.headersSent) {
+            return res.status(500).json({ error: ex.message });
+        }
     }
 });
 
@@ -146,14 +163,18 @@ app.get('/getMinerBalance', async (req, res) => {
 
         client.close();
 
-        res.json({
+        return res.json({
             status: 'success',
             balance: hbarBalance,
         });
 
     } catch (ex) {
-        client && client.close();
-        res.status(500).json({ error: ex.message });
+        if (client) {
+            client.close();
+        }
+        if (!res.headersSent) {
+            return res.status(500).json({ error: ex.message });
+        }
     }
 });
 

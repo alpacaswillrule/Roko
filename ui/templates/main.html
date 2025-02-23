@@ -843,8 +843,16 @@
             const query = document.getElementById('query').value;
             const maxTokens = parseInt(document.getElementById('max-tokens').value);
 
-            const coinCost = 0.00001 * (query.length + maxTokens);
-            console.log(coinsOwned, coinCost)
+            // Calculate cost as integer number of smallest units to avoid floating point issues
+            const baseUnits = query.length + maxTokens;
+            const coinCost = parseInt(baseUnits) * 0.00001;
+
+            console.log("Cost calculation:", {
+                baseUnits,
+                coinCost,
+                query: query.length,
+                maxTokens
+            });
 
             if (coinsOwned < coinCost) {
                 alert('Not enough coins!');
@@ -893,12 +901,27 @@
                 method: 'POST',
                 body: new FormData(this)
             })
-                .then(response => response.text())
-                .then(html => {
-                    document.body.innerHTML = html;
+                .then(response => response.json())
+                .then(data => {
+                    const responseContainer = document.querySelector('.response-container');
+                    responseContainer.innerHTML = `
+                        <h2>Response:</h2>
+                        <p>${data.response || data.error}</p>
+                    `;
                     progressBar.style.display = 'none';
                     statusMessage.style.display = 'none';
-                    // submitBtn.disabled = false;
+                    submitBtn.disabled = false;
+                })
+                .catch(error => {
+                    const responseContainer = document.querySelector('.response-container');
+                    responseContainer.innerHTML = `
+                        <h2>Error:</h2>
+                        <p>An error occurred while generating the response.</p>
+                    `;
+                    console.error('Error:', error);
+                    progressBar.style.display = 'none';
+                    statusMessage.style.display = 'none';
+                    submitBtn.disabled = false;
                 });
         });
 
@@ -922,11 +945,10 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data)
+                    console.log("data crypto",data)
 
                     alert('HBAR Transfer Successful!');
 
-                    updateCoins();
 
                     document.getElementById('transaction-link').innerHTML =
                         `Transaction: <a href="${data.transactionUrl}" target="_blank">View on HashScan</a>`;
@@ -936,7 +958,7 @@
                     alert('An error occurred while processing the transfer.');
                 });
 
-            // updateCoins();
+            updateCoins();
 
             const statusMessage = document.getElementById('statusMessage');
             statusMessage.style.display = 'block';

@@ -268,9 +268,9 @@ def get_response():
 
         try:
             response_string = getResponse(query, max_tokens)
-            return render_template('main.html', response=response_string)
+            return jsonify({'response': response_string})
         except Exception as e:
-            return render_template('main.html', response=f"Error: {str(e)}")
+            return jsonify({'error': str(e)}), 500
 
 @app.route('/train', methods=['POST'])
 def train():
@@ -328,4 +328,4 @@ def getResponse(query, max_tokens):
         raise e
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=9000)
